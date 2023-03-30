@@ -1,0 +1,25 @@
+---
+  - hosts: all
+    become: true
+
+    tasks:
+      - name: STOP APACHE2
+        service: name=apache2 state=stopped
+
+      - name: DELETE LIBAPACHE2-MOD FOR 56
+        ansible.builtin.apt: name=libapache2-mod-php5.6 update_cache=yes state=absent
+
+      - name: DELETE PHP56
+        ansible.builtin.apt: name=php5.6 update_cache=yes state=absent
+
+      - name: CLEAN
+        ansible.builtin.apt: autoremove=yes purge=yes
+
+      - name: INSTALL PHP72
+        apt: name=php7.2 update_cache=yes state=latest
+
+      - name: INSTALL LIBAPACHE2-MOD FOR 72
+        apt: name=libapache2-mod-php7.2 update_cache=yes state=latest
+
+      - name: START APACHE2
+        service: name=apache2 state=started

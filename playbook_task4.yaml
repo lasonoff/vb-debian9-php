@@ -1,0 +1,54 @@
+---
+  - hosts: all
+    become: true
+
+    tasks:
+      - name: UPDATE BEFORE
+        apt: upgrade=yes update_cache=yes cache_valid_time=86400
+
+      - name: INSTALL UTILS
+        apt: name="{{ item }}" state=latest update_cache=yes
+        with_items:
+          - htop
+          - vim
+          - wget
+          - htop
+          - tmux
+          - software-properties-common
+          - apt-transport-https
+          - lsb-release
+          - ca-certificates
+
+      - name: INSTALL APACHE2
+        apt: name=apache2 update_cache=yes state=latest
+
+      - name: STOP APACHE2
+        service: name=apache2 state=stopped
+
+      - name: ENABLE MOD_REWRITE
+        apache2_module: name=rewrite state=present
+
+      - name: APACHE2 LISTEN ON PORT 8888
+        lineinfile: dest=/etc/apache2/ports.conf regexp="^Listen 80" line="Listen 8888" state=present
+
+      - name: INSTALL NGINX
+        apt: name=nginx update_cache=yes state=latest
+
+      - name: START APACHE2
+        service: name=apache2 state=started
+
+      - name: ADD REPO FOR PHP PART1
+        ansible.builtin.command: wget -O /etc/apt/trusted.gpg.d/php.gpg https://packages.sury.org/php/apt.gpg
+
+      - name: ADD REPO FOR PHP PART2
+        ansible.builtin.command: sudo su -c "echo 'deb http://mirror-bbg-5.internet1.de/sury-php-stretch stretch main' > /etc/apt/sources.list.d/php.list"
+
+      - name: UPDATE AFTER ADD REPO
+        become: true
+        apt: upgrade=yes update_cache=yes cache_valid_time=86400
+
+      - name: INSTALL PHP56
+        apt: name=php5.6 update_cache=yes state=latest
+
+      - name: INSTALL LIBAPACHE2-MOD
+        apt: name=libapache2-mod-php5.6 update_cache=yes state=latest
